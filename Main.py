@@ -268,14 +268,17 @@ class Commander(Information):
         スリッページがあった場合には、一度注文をキャンセルして約定価格を変えさせる
         :return: 
         """
+        ordered_price = self.orders[0]['price']
+        average_price = self.orders[0]['average_price']
+
         if self.orders:
-            if (self.orders[0]['price'] != self.orders[0]['average_price'] and 
-                self.orders[0]['executed_size'] != 0):
+            if ordered_price != average_price and self.orders[0]['executed_size'] != 0:
                 self.api.cancelparentorder(product_code=self.product,
-                                           parent_order_id=self.order_id)
+                                           parent_order_id=self.order_id
+                                           )
                 print('-----------------------------ORDER CANCELLED DUE TO SLIPPAGE-------------------------------')
                 time.sleep(1)
-    
+
 
 if __name__ == '__main__':
     commander = Commander()
