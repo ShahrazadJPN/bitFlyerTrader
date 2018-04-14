@@ -1,6 +1,6 @@
 from Information import Information
 from HistoricalData import HistoricalData
-from Realtime_Data import RealtimeData
+# from Realtime_Data import RealtimeData
 from datetime import datetime
 from OrderMaker import OrderMaker
 import time
@@ -10,7 +10,7 @@ from decimal import *
 class ConditionChecker(Information):
 
     """
-    HitoricalDataとInformationから情報をもらってきて、実際に取引をこなうかどうか判断する。
+    HitoricalDataとInformationから情報をもらってきて、取引すべき状態か否かチェックする。
     取引を行うと判断した場合には、OrderMakerへ指令を投げ、発注させる。
     HistoricalDataからはcsvに保存されている取引履歴を貰っている
     InformationからはAPIの情報をもらっている
@@ -20,8 +20,8 @@ class ConditionChecker(Information):
         super().__init__()
         self.order_maker = OrderMaker()
         self.trade_history = HistoricalData()
+        # self.rd = RealtimeData()    # RealtimeDataのインスタンスを生成する
 
-        self.rd = RealtimeData()    # RealtimeDataのインスタンスを生成する
         self.df_tail = self.trade_history.df.tail(1)    # csvの最後の一行＝最新データを切り取る
 
         self.ewma_1day = self.df_tail['ewma1day']
@@ -39,7 +39,7 @@ class ConditionChecker(Information):
 
         self.order_side = 'BUY/SELL'  # Will be BUY or SELL
 
-        self.current_price = self.rd.last_price
+        self.current_price = self.api.board(product_code=self.product)['mid_price']
 
         self.orders = []            # 現在の注文が入る
         self.positions = []         # 現在のポジションが入る
@@ -47,7 +47,7 @@ class ConditionChecker(Information):
         self.chart = {}             # 各種EWMAが入る
 
         self.market_flow = "SLEEP"     # 市場の流れ
-        self.market_status = self.api.gethealth(product=self.product)['health']
+        self.market_status = self.api.gethealth(product_code=self.product)['status']
 
         self.signal = False    # Trueならば取引GOサイン、Falseならば停止
 
@@ -60,19 +60,19 @@ class ConditionChecker(Information):
         self.waiting_time = self.default_waiting_time      # キャンセルまでの待ち時間(sec)
 
     def market_reader(self):
-
         """
         現在、市場が上昇傾向なのか下落傾向なのかを判断する。
         """
 
-        rd = self.rd  #
-        rd.get_current_data()
+        # rd = self.rd  # RealtimeDataインスタンス
+        # rd.get_current_data()
         self.renew_chart_data()
-        current_price = rd.last_price
+        self.current_price_getter()
+        current_price = self.current_price
 
         div = abs((current_price - self.chart['ewma_1day']) / self.chart['ewma_1day'] * 100)  # ewma1 に対する現在価格の乖離率
 
-        if div <= 0:
+        if div <= 0.5:
             market = "SLEEP"
             print('DIVGERGENCE IS TOO LOW, WAIT FOR CLEAR MOVEMENT, DIVERGENCE PERCENTAGE:', div, '%')
 
@@ -82,7 +82,7 @@ class ConditionChecker(Information):
             self.order_side = "BUY"
 
         elif ((current_price < self.chart['ewma_1day'] < self.chart['ewma_3days']) or
-              (self.chart['ewma_1days'] > self.chart['ewma_3days'] and self.chart['ewma_1day'] > current_price)):
+              (self.chart['ewma_1day'] > self.chart['ewma_3days'] and self.chart['ewma_1day'] > current_price)):
             market = "DOWN"
             self.order_side = "SELL"
 
@@ -92,7 +92,6 @@ class ConditionChecker(Information):
         self.market_flow = market
 
     def renew_chart_data(self):
-
         """
         CSVに保存されているチャート情報が更新されていると思われるので、最新の状態を読み込みに行く
         かつ、これまで保持していた古い情報を最新の情報へアップデートする
@@ -102,18 +101,18 @@ class ConditionChecker(Information):
         self.trade_history.renew_data()
         self.df_tail = self.trade_history.df.tail(1)
 
-        self.ewma_1day = self.df_tail['ewma1day']
-        self.ewma_3days = self.df_tail['ewma3days']
-        self.ewma_5days = self.df_tail['ewma5days']
-        self.ewma_25days = self.df_tail['ewma25days']
+        self.ewma_1day = self.df_tail['ewma1day'][0]
+        self.ewma_3days = self.df_tail['ewma3days'][0]
+        self.ewma_5days = self.df_tail['ewma5days'][0]
+        self.ewma_25days = self.df_tail['ewma25days'][0]
 
-        self.div_1day = self.df_tail['1dayDiv']
-        self.div_5days = self.df_tail['5dayDiv']
-        self.div_25days = self.df_tail['divergence']
+        self.div_1day = self.df_tail['1dayDiv'][0]
+        self.div_5days = self.df_tail['5dayDiv'][0]
+        self.div_25days = self.df_tail['divergence'][0]
 
-        self.ewma_1hour = self.df_tail['ewma60mins']
-        self.ewma_6hours = self.df_tail['ewma360mins']
-        self.ewma_12hours = self.df_tail['ewma12hrs']
+        self.ewma_1hour = self.df_tail['ewma60mins'][0]
+        self.ewma_6hours = self.df_tail['ewma360mins'][0]
+        self.ewma_12hours = self.df_tail['ewma12hrs'][0]
 
         self.chart = {'ewma_1day': self.ewma_1day,
                       'ewma_3days': self.ewma_3days,
@@ -124,7 +123,8 @@ class ConditionChecker(Information):
                       'div_25days': self.div_25days,
                       'ewma_1hour': self.ewma_1hour,
                       'ewma_6hours': self.ewma_6hours,
-                      'ewma_12hours': self.ewma_12hours}
+                      'ewma_12hours': self.ewma_12hours
+                      }
 
     def board_status_checker(self):
 
@@ -132,7 +132,7 @@ class ConditionChecker(Information):
         サーバーの負荷状態を確認し、負荷の強い状態のときは動きを止めさせる
         """
 
-        self.market_status = self.api.gethealth(product=self.product)['health']
+        self.market_status = self.api.gethealth(product_code=self.product)['status']
 
         if self.market_status == "NORMAL" or self.market_status == "BUSY":
             self.signal = True
@@ -145,11 +145,12 @@ class ConditionChecker(Information):
         現物とFXの価格乖離率を計算し、SFDが発動しそうならば取引をやめさせる
         """
 
-        btc_price = self.api.board(product="BTC_JPY")['mid_price']
-        self.rd.get_current_data()
-        current_price = self.rd.last_price
+        btc_price = self.api.board(product_code="BTC_JPY")['mid_price']
+        self.current_price_getter()
 
-        sfd = (current_price / btc_price) * 100     # 現物との価格乖離率
+        sfd = (self.current_price / btc_price) * 100     # 現物との価格乖離率
+
+        print(self.current_price, btc_price)
 
         if sfd > 4.7:
             self.signal = False
@@ -162,7 +163,7 @@ class ConditionChecker(Information):
         現在のポジションを確認し、すでにある場合には余計な発注動作をさせないようにする
         """
 
-        positions = self.api.getpositions(product=self.product)
+        positions = self.api.getpositions(product_code=self.product)
 
         if not positions:   # ポジションなし
             self.signal = True
@@ -179,7 +180,7 @@ class ConditionChecker(Information):
         :return:
         """
 
-        self.orders = self.api.getparentorders(product=self.product,
+        self.orders = self.api.getparentorders(product_code=self.product,
                                                parent_order_state="ACTIVE")
 
         if not self.orders:
@@ -253,8 +254,7 @@ class ConditionChecker(Information):
         無理そうならばwaiting_timeを変更し、注文キャンセルの方向へ持っていく
         :return:
         """
-        self.rd.get_current_data()
-        self.current_price = self.rd.last_price
+        # self.rd.get_current_data()
 
         self.ordering_price = self.orders[0]['price']   # 注文中の価格
 
@@ -277,3 +277,6 @@ class ConditionChecker(Information):
                                            )
                 print('-----------------------------ORDER CANCELLED DUE TO SLIPPAGE-------------------------------')
                 time.sleep(1)
+
+    def current_price_getter(self):
+        self.current_price = self.api.board(product_code=self.product)['mid_price']

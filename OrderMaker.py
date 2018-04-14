@@ -18,7 +18,7 @@ class OrderMaker(Information):
         :param order_id:
         :return:
         """
-        self.api.cancelparentorder(product=self.product,
+        self.api.cancelparentorder(product_code=self.product,
                                    parent_order_acceptance_id=order_id)
         time.sleep(2)
 
@@ -104,7 +104,7 @@ class OrderMaker(Information):
         if 'status' in profit_or_loss.keys():
             if profit_or_loss['status'] == -205:
                 self.api.cancelallchildorders(product_code=self.product)
-                print("ERROR OCCURED, CANCELLING ALL ORDERS")
+                print("ERROR OCCURRED, CANCELLING ALL ORDERS")
                 time.sleep(2)
 
         return profit_or_loss
