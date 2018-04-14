@@ -5,12 +5,18 @@ from pubnub.pubnub_tornado import PubNubTornado
 from pubnub.pnconfiguration import PNReconnectionPolicy
 from tornado import gen
 from Settings import Settings
+from OrderMaker import OrderMaker
 
 
 class FastTrader(Settings):
 
     last_price = 0
     hd = ConditionChecker()
+    hd.market_reader()  # マーケットの流れを確認
+    hd.board_status_checker()  # サーバー状態を確認
+    hd.sfd_status_checker()  # SFDを確認
+    count = 0
+    order = OrderMaker()
 
     def __init__(self):
         super().__init__()
@@ -31,13 +37,20 @@ class FastTrader(Settings):
 
             def message(self, pubnub, message):
                 current_price = message.message['ltp']
-                FastTrader.hd.market_reader()           # マーケットの流れを確認
-                FastTrader.hd.board_status_checker()  # サーバー状態を確認
-                FastTrader.hd.sfd_status_checker()  # SFDを確認
-                print(FastTrader.hd.signal)
-                print(current_price)
+                FastTrader.hd.order_checker()
+                FastTrader.count += 1
+                # FastTrader.hd.board_status_checker()
+
                 if FastTrader.hd.signal:
-                    print("yep")
+                    print(current_price)
+                    FastTrader.hd.order_information_checker("MARKET")
+
+                if FastTrader.count == 100:
+                    FastTrader.hd.market_reader()
+                    FastTrader.hd.sfd_status_checker()
+                    FastTrader.count = 0
+                elif FastTrader.count % 10 == 0:
+                    print(FastTrader.count)
 
         s = Callback()
         self.pubnub.add_listener(s)

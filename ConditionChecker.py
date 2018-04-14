@@ -2,6 +2,7 @@ from Information import Information
 from HistoricalData import HistoricalData
 # from Realtime_Data import RealtimeData
 from datetime import datetime
+from Recorder import Recorder
 from OrderMaker import OrderMaker
 import time
 from decimal import *
@@ -21,6 +22,7 @@ class ConditionChecker(Information):
         self.order_maker = OrderMaker()
         self.trade_history = HistoricalData()
         # self.rd = RealtimeData()    # RealtimeDataのインスタンスを生成する
+        self.recorder = Recorder()
 
         self.df_tail = self.trade_history.df.tail(1)    # csvの最後の一行＝最新データを切り取る
 
@@ -148,9 +150,7 @@ class ConditionChecker(Information):
         btc_price = self.api.board(product_code="BTC_JPY")['mid_price']
         self.current_price_getter()
 
-        sfd = (self.current_price / btc_price) * 100     # 現物との価格乖離率
-
-        print(self.current_price, btc_price)
+        sfd = (self.current_price / btc_price - 1) * 100     # 現物との価格乖離率
 
         if sfd > 4.7:
             self.signal = False
@@ -218,7 +218,7 @@ class ConditionChecker(Information):
 
             time.sleep(2)
 
-            print("OCO ORDER SENT FROM AUTOBOT:", order)
+            print("OCO ORDER SENT:", order)
 
     def only_order_checker(self):
         """
@@ -279,4 +279,47 @@ class ConditionChecker(Information):
                 time.sleep(1)
 
     def current_price_getter(self):
+        """
+        ときどき現在価格を取得するための関数
+        :return:
+        """
         self.current_price = self.api.board(product_code=self.product)['mid_price']
+
+    def order_information_checker(self, order_type):
+        """
+        注文に必要な情報を収集し、実際の注文指示を出す
+        :param order_type:
+        :return:
+        """
+        if self.market_flow == "UP":
+            order_side = "BUY"
+        elif self.market_flow == "DOWN":
+            order_side = "SELL"
+        else:
+            order_side = "NONE"
+
+        if order_side == "BUY" or order_side == "SELL":
+            self.current_price_getter()
+            purchasable_btc = self.balance / self.current_price
+            order_size = Decimal(purchasable_btc).quantize(Decimal('0.0001'), rounding=ROUND_DOWN)
+            order_size = float(order_size)
+            order_price = self.current_price
+
+            if order_type == "IFDOCO":
+
+                self.order_maker.parent_order_maker(order_side, order_size, order_price, self.balance)
+
+            elif order_type == "MARKET":
+
+                self.order_maker.market_order_maker(order_size, order_side)
+
+        else:
+            pass
+
+    def position_checker_for_market_ordering(self):
+        """
+        成行注文で取引する時のポジション状態を確認する
+        :return:
+        """
+
+

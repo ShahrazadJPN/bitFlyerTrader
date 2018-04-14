@@ -1,16 +1,16 @@
 from Information import Information
 import time
+from Recorder import Recorder
 
 
 class OrderMaker(Information):
-
     """
     InformationからはAPIの情報だけをもらっておく
     実際にオーダーを行うときは、Mainから指令を受ける
     """
-
     def __init__(self):
         super().__init__()
+        self.recorder = Recorder()
 
     def cancel_parent_order(self, order_id):
         """
@@ -109,7 +109,7 @@ class OrderMaker(Information):
 
         return profit_or_loss
     
-    def parent_order_maker(self, order_side, order_size, order_price):
+    def parent_order_maker(self, order_side, order_size, order_price, balance):
 
         data = self.order_base_maker(order_side, order_price)
 
@@ -151,6 +151,10 @@ class OrderMaker(Information):
                 print("ERROR OCCURED, CANCELLING ALL ORDERS")
                 time.sleep(2)
 
+        self.recorder.balance_recorder(balance, order_price)
+        print(buy_btc)
+        time.sleep(1)
+
         return buy_btc
 
     def order_base_maker(self, order_side, order_price):
@@ -175,3 +179,16 @@ class OrderMaker(Information):
         data = {'execution_side': contrary, 'loss_line': loss, 'profit_line': profit}
 
         return data
+
+    def market_order_maker(self, order_size, order_side):
+
+        market = self.api.sendchildorder(product_code=self.product,
+                                         child_order_type='MARKET',
+                                         side=order_side,
+                                         size=order_size,
+                                         time_in_force='IOC'
+                                         )
+
+        print(market)
+
+        return market

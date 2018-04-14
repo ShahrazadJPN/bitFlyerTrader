@@ -17,6 +17,9 @@ if __name__ == '__main__':
             c.only_order_checker()        # 注文しかない場合の処理を行う →場合によってはここで注文をキャンセルする
             c.slippage_checker()
 
+            if c.signal:
+                c.order_information_checker("IFDOCO")   # 全ての条件をクリアしたら、取引を行う
+
     except:
         time.sleep(2)
         traceback.print_exc()
