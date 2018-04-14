@@ -76,9 +76,9 @@ class OrderMaker(Information):
 
             return int(bid_price + 10)
         
-    def oco_order_maker(self, order_side, order_size):
+    def oco_order_maker(self, order_side, order_size, order_price):
 
-        data = self.order_base_maker(order_side, order_size)
+        data = self.order_base_maker(order_side, order_price)
 
         profit_or_loss = self.api.sendparentorder(
                                                   order_method="OCO",
@@ -94,7 +94,7 @@ class OrderMaker(Information):
                                                                   "product_code": self.product,
                                                                   "condition_type": "STOP",  # ストップ注文
                                                                   "side": data['execution_side'],
-                                                                  "price": 0,  #
+                                                                  "price": data['loss_line'],  # what?
                                                                   "trigger_price": data['loss_line'],
                                                                   "size": order_size
                                                               }
@@ -111,7 +111,7 @@ class OrderMaker(Information):
     
     def parent_order_maker(self, order_side, order_size, order_price):
 
-        data = self.order_base_maker(order_side, order_size)
+        data = self.order_base_maker(order_side, order_price)
 
         buy_btc = self.api.sendparentorder(
                                      order_method="IFDOCO",

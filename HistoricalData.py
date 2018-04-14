@@ -75,13 +75,3 @@ class HistoricalData(Settings):
         self.ewma_12hours = self.df['ewma12hrs']
 
         self.length = len(self.df.index)
-
-
-# while True:
-#     data.start()
-#     information = Information.Information()
-#     mid_price = information.api.board(product=data.product)['mid_price']
-#     last_price = data.last_price
-#     print(last_price)
-#
-#     time.sleep(0.2)
