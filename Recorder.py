@@ -54,7 +54,7 @@ if __name__ == '__main__':
     while True:
         try:
             rec.market_recorder(rec.product, rec.path)  #
-            time.sleep(60)
+            time.sleep(0.5)
         except:
             time.sleep(2)
             import traceback

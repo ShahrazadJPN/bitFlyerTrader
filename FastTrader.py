@@ -6,7 +6,7 @@ from pubnub.pnconfiguration import PNReconnectionPolicy
 from tornado import gen
 from Settings import Settings
 from OrderMaker import OrderMaker
-
+from Recorder import Recorder
 
 class FastTrader(Settings):
 
@@ -15,6 +15,7 @@ class FastTrader(Settings):
     hd.market_reader()  # マーケットの流れを確認
     hd.board_status_checker()  # サーバー状態を確認
     hd.sfd_status_checker()  # SFDを確認
+    rec = Recorder()
     count = 0
     order = OrderMaker()
 
@@ -39,6 +40,8 @@ class FastTrader(Settings):
                 current_price = message.message['ltp']
                 FastTrader.hd.child_order_checker()
                 FastTrader.hd.position_checker()
+                if FastTrader.count == 0:
+                    FastTrader.hd.market_reader()
                 print(current_price)
 
                 if FastTrader.hd.positioning and not FastTrader.hd.ordering:
@@ -51,8 +54,8 @@ class FastTrader(Settings):
                     FastTrader.hd.order_information_checker("MARKET")
 
                 if FastTrader.count == 40:
-                    FastTrader.hd.market_reader()
                     FastTrader.hd.sfd_status_checker()
+                    FastTrader.rec.balance_recorder(FastTrader.hd.balance, current_price)
                     FastTrader.count = 0
 
 
