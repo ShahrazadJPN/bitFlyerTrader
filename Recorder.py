@@ -37,7 +37,7 @@ class Recorder(Information):
 
     def balance_recorder(self, balance, order_price):
 
-        time = self.api.ticker['timestamp']
+        time = self.api.ticker(product_code=self.product)['timestamp']
         time = time.replace("T", " ")
 
         w = pd.DataFrame([[balance, time, order_price]])
