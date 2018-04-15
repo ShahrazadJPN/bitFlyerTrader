@@ -191,4 +191,11 @@ class OrderMaker(Information):
 
         print(market)
 
-        time.sleep(3.5)
+        status = self.api.gethealth(product_code=self.product)['status']
+
+        if status == "NORMAL":
+
+            time.sleep(1.5)
+
+        else:
+            time.sleep(10)

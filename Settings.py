@@ -10,7 +10,7 @@ class Settings:
         self.recording_path = "record.csv"     # 取引価格や口座残高を記録するところ
         self.product = "FX_BTC_JPY"
         self.realtime_product = "lightning_ticker_" + self.product
-        self.lost_price = 3000  # 損切り価格
+        self.lost_price = 2000  # 損切り価格
         self.cancelling_line = 2000     # 現在価格と注文価格の差がこれより大きくなったらwaiting_timeを変更する
         self.default_waiting_time = 600
         self.profit_price = 300
