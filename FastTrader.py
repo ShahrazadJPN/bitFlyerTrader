@@ -17,6 +17,8 @@ class FastTrader(Settings):
     hd.sfd_status_checker()  # SFDを確認
     rec = Recorder()
     count = 0
+    count2 = 0
+    last_balance = 0
     order = OrderMaker()
 
     def __init__(self):
@@ -54,8 +56,11 @@ class FastTrader(Settings):
                     FastTrader.hd.order_information_checker("MARKET")
 
                 if FastTrader.count == 40:
+                    FastTrader.count2 += 1
                     FastTrader.hd.sfd_status_checker()
-                    FastTrader.rec.balance_recorder(FastTrader.hd.balance, current_price)
+                    if FastTrader.count2 == 10:
+                        FastTrader.rec.balance_recorder(FastTrader.hd.balance, current_price)
+                        FastTrader.count2 = 0
                     FastTrader.count = 0
 
 
