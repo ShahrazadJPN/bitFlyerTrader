@@ -316,10 +316,54 @@ class ConditionChecker(Information):
         else:
             pass
 
-    def position_checker_for_market_ordering(self):
+    def position_checker_for_market_ordering(self, current_price):
         """
         成行注文で取引する時のポジション状態を確認する
+        ついでに注文も出す
         :return:
         """
+        positions = self.positions
 
+        position_size = 0
 
+        for position in positions:
+            position_size += position['size']     # 全ポジションを確実に解消
+
+        position_side = positions[0]['side']
+
+        if position_size < 0.001:
+            position_size = 0.001 + position_size   # 0.001ビットコイン所持していれば次の注文で全部きれいになるはず
+
+        position_size = Decimal(position_size).quantize(Decimal('0.0000'), rounding=ROUND_HALF_DOWN)
+
+        position_size = float(position_size)
+
+        order_size = position_size
+
+        order_side = "BUY" if position_side == "SELL" else "SELL"
+
+        position_price = positions[0]['price']
+
+        go = self.market_order_go_or_not_checker(position_price, current_price, position_side)
+
+        if go:
+            self.order_maker.market_order_maker(order_size, order_side)
+
+    def market_order_go_or_not_checker(self, position_price, current_price, position_side):
+
+        if position_side == "BUY":  # 買いポジションを持っている時
+            if current_price - position_price > self.profit_price:  # 利確
+                return True
+            elif abs(current_price - position_price) > self.lost_price:     # 損切り
+                return True
+            else:
+                return False
+        elif position_side == "SELL":  # 売りポジションを持っている時
+            if position_price - current_price > self.profit_price:  # 利確
+                return True
+            elif abs(position_price - current_price) > self.lost_price:     # 損切り
+                return True
+            else:
+                return False
+        else:
+            return False

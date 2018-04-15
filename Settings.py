@@ -13,3 +13,4 @@ class Settings:
         self.lost_price = 3000  # 損切り価格
         self.cancelling_line = 2000     # 現在価格と注文価格の差がこれより大きくなったらwaiting_timeを変更する
         self.default_waiting_time = 600
+        self.profit_price = 300

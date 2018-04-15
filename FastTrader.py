@@ -37,15 +37,18 @@ class FastTrader(Settings):
 
             def message(self, pubnub, message):
                 current_price = message.message['ltp']
-                FastTrader.hd.order_checker()
+                FastTrader.hd.position_checker()
+
+                if FastTrader.hd.positioning:
+                    FastTrader.hd.position_checker_for_market_ordering(current_price)
+
                 FastTrader.count += 1
-                # FastTrader.hd.board_status_checker()
 
                 if FastTrader.hd.signal:
                     print(current_price)
                     FastTrader.hd.order_information_checker("MARKET")
 
-                if FastTrader.count == 100:
+                if FastTrader.count == 130:
                     FastTrader.hd.market_reader()
                     FastTrader.hd.sfd_status_checker()
                     FastTrader.count = 0

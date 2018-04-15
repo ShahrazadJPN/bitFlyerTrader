@@ -191,4 +191,4 @@ class OrderMaker(Information):
 
         print(market)
 
-        return market
+        time.sleep(0.3)
