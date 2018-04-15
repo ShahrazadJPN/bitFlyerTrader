@@ -39,7 +39,6 @@ class FastTrader(Settings):
                 current_price = message.message['ltp']
                 FastTrader.hd.child_order_checker()
                 FastTrader.hd.position_checker()
-                FastTrader.hd.market_reader()
                 print(current_price)
 
                 if FastTrader.hd.positioning and not FastTrader.hd.ordering:
@@ -51,7 +50,7 @@ class FastTrader(Settings):
                     print('aiming to place a new order')
                     FastTrader.hd.order_information_checker("MARKET")
 
-                if FastTrader.count == 130:
+                if FastTrader.count == 40:
                     FastTrader.hd.market_reader()
                     FastTrader.hd.sfd_status_checker()
                     FastTrader.count = 0
@@ -69,4 +68,11 @@ class FastTrader(Settings):
 
 
 if __name__ == '__main__':
-    r = FastTrader()
+    while True:
+        try:
+            r = FastTrader()
+        except:
+            import time
+            import traceback
+            time.sleep(2)
+            traceback.print_exc()
