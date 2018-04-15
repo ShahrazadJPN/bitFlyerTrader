@@ -26,18 +26,24 @@ class ConditionChecker(Information):
 
         self.df_tail = self.trade_history.df.tail(1)    # csvの最後の一行＝最新データを切り取る
 
-        self.ewma_1day = self.df_tail['ewma1day']
-        self.ewma_3days = self.df_tail['ewma3days']
-        self.ewma_5days = self.df_tail['ewma5days']
-        self.ewma_25days = self.df_tail['ewma25days']
+        # self.ewma_1day = self.df_tail['ewma1day'][0]
+        # self.ewma_3days = self.df_tail['ewma3days'][0]
+        # self.ewma_5days = self.df_tail['ewma5days'][0]
+        # self.ewma_25days = self.df_tail['ewma25days'][0]
 
-        self.div_1day = self.df_tail['1dayDiv']
-        self.div_5days = self.df_tail['5dayDiv']
-        self.div_25days = self.df_tail['divergence']
+        # self.div_1day = self.df_tail['1dayDiv'][0]
+        # self.div_5days = self.df_tail['5dayDiv'][0]
+        # self.div_25days = self.df_tail['divergence'][0]
 
-        self.ewma_1hour = self.df_tail['ewma60mins']
-        self.ewma_6hours = self.df_tail['ewma360mins']
-        self.ewma_12hours = self.df_tail['ewma12hrs']
+        self.ewma_1hour = self.df_tail['ewma60mins'][0]
+        self.ewma_6hours = self.df_tail['ewma360mins'][0]
+        # self.ewma_12hours = self.df_tail['ewma12hrs'][0]
+
+        self.ewma_1min = self.df_tail['ewma_1min'][0]
+        self.ewma_5mins = self.df_tail['ewma_5mins'][0]
+
+        self.best_bid = 0
+        self.best_ask = 0
 
         self.order_side = 'BUY/SELL'  # Will be BUY or SELL
 
@@ -46,7 +52,6 @@ class ConditionChecker(Information):
         self.orders = []            # 現在の注文が入る
         self.positions = []         # 現在のポジションが入る
         self.ordering_price = 0    # 注文中の価格が入る
-        self.chart = {}             # 各種EWMAが入る
 
         self.market_flow = "SLEEP"     # 市場の流れ
         self.market_status = self.api.gethealth(product_code=self.product)['status']
@@ -72,19 +77,19 @@ class ConditionChecker(Information):
         self.current_price_getter()
         current_price = self.current_price
 
-        div = abs((current_price - self.chart['ewma_1day']) / self.chart['ewma_1day'] * 100)  # ewma1 に対する現在価格の乖離率
+        # div = abs((current_price - self.chart['ewma_1day']) / self.chart['ewma_1day'] * 100)  # ewma1 に対する現在価格の乖離率
 
-        if div <= 0.5:
-            market = "SLEEP"
-            print('DIVGERGENCE IS TOO LOW, WAIT FOR CLEAR MOVEMENT, DIVERGENCE PERCENTAGE:', div, '%')
+        # if div <= 0.5:
+        #     market = "SLEEP"
+        #     print('DIVGERGENCE IS TOO LOW, WAIT FOR CLEAR MOVEMENT, DIVERGENCE PERCENTAGE:', div, '%')
 
-        elif ((current_price > self.chart['ewma_1day'] > self.chart['ewma_3days']) or
-              (self.chart['ewma_3days'] > self.chart['ewma_1day'] and current_price > self.chart['ewma_1day'])):
+        if ((current_price > self.ewma_1min > self.ewma_5mins) or
+            (self.ewma_5mins > self.ewma_1min and current_price > self.ewma_1min)):
             market = "UP"
             self.order_side = "BUY"
 
-        elif ((current_price < self.chart['ewma_1day'] < self.chart['ewma_3days']) or
-              (self.chart['ewma_1day'] > self.chart['ewma_3days'] and self.chart['ewma_1day'] > current_price)):
+        elif ((current_price < self.ewma_1min < self.ewma_5mins) or
+              (self.ewma_1min > self.ewma_5mins and self.ewma_1min > current_price)):
             market = "DOWN"
             self.order_side = "SELL"
 
@@ -103,41 +108,43 @@ class ConditionChecker(Information):
         self.trade_history.renew_data()
         self.df_tail = self.trade_history.df.tail(1)
 
-        self.ewma_1day = self.df_tail['ewma1day'][0]
-        self.ewma_3days = self.df_tail['ewma3days'][0]
-        self.ewma_5days = self.df_tail['ewma5days'][0]
-        self.ewma_25days = self.df_tail['ewma25days'][0]
-
-        self.div_1day = self.df_tail['1dayDiv'][0]
-        self.div_5days = self.df_tail['5dayDiv'][0]
-        self.div_25days = self.df_tail['divergence'][0]
+        # self.ewma_1day = self.df_tail['ewma1day'][0]
+        # self.ewma_3days = self.df_tail['ewma3days'][0]
+        # self.ewma_5days = self.df_tail['ewma5days'][0]
+        # self.ewma_25days = self.df_tail['ewma25days'][0]
+        #
+        # self.div_1day = self.df_tail['1dayDiv'][0]
+        # self.div_5days = self.df_tail['5dayDiv'][0]
+        # self.div_25days = self.df_tail['divergence'][0]
 
         self.ewma_1hour = self.df_tail['ewma60mins'][0]
         self.ewma_6hours = self.df_tail['ewma360mins'][0]
-        self.ewma_12hours = self.df_tail['ewma12hrs'][0]
+        # self.ewma_12hours = self.df_tail['ewma12hrs'][0]
 
-        self.chart = {'ewma_1day': self.ewma_1day,
-                      'ewma_3days': self.ewma_3days,
-                      'ewma_5days': self.ewma_5days,
-                      'ewma_25days': self.ewma_25days,
-                      'div_1day': self.div_1day,
-                      'div_5days': self.div_5days,
-                      'div_25days': self.div_25days,
-                      'ewma_1hour': self.ewma_1hour,
-                      'ewma_6hours': self.ewma_6hours,
-                      'ewma_12hours': self.ewma_12hours
-                      }
+        self.ewma_1min = self.df_tail['ewma_1min'][0]
+        self.ewma_5mins = self.df_tail['ewma_5mins'][0]
 
     def board_status_checker(self):
 
         """
         サーバーの負荷状態を確認し、負荷の強い状態のときは動きを止めさせる
+        また、スプレッドが大きく開いている時にも止めさせる
         """
 
         self.market_status = self.api.gethealth(product_code=self.product)['status']
 
         if self.market_status == "NORMAL" or self.market_status == "BUSY":
-            self.signal = True
+            ticker = self.api.ticker(product_code=self.product)
+            self.best_bid = ticker['best_bid']
+            self.best_ask = ticker['best_ask']
+
+            spread = (self.best_ask / self.best_bid - 1) * 100  # スプレッドの計算
+
+            if spread < self.spread_limit:
+                self.signal = True
+            else:
+                self.signal = False
+
         else:
             self.signal = False
 
@@ -168,9 +175,9 @@ class ConditionChecker(Information):
         if not positions:   # ポジションなし
             self.signal = True
             self.positioning = False
-        else:                   # たまにゴミが残ることがあるので、そのときの処理を考えなければいけない -> only_position_checker
+        else:                   # ポジションあり
             self.signal = False
-            self.positioning = True
+            self.positioning = True  # 購入サインを消し、ポジション有のフラグを立てる
 
         self.positions = positions
 
@@ -367,3 +374,20 @@ class ConditionChecker(Information):
                 return False
         else:
             return False
+
+    def child_order_checker(self):
+        """
+        発注しているのかいないのか確認する
+        :return:
+        """
+
+        self.orders = self.api.getchildorders(product_code=self.product,
+                                              child_order_state="ACTIVE")
+
+        if not self.orders:
+            self.signal = True
+            self.ordering = False
+        else:
+            self.signal = False
+            self.ordering = True
+            self.order_id = self.orders[0]['child_order_acceptance_id']     # 注文中ならばオーダーIDを取得しておく

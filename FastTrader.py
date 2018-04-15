@@ -37,23 +37,25 @@ class FastTrader(Settings):
 
             def message(self, pubnub, message):
                 current_price = message.message['ltp']
+                FastTrader.hd.child_order_checker()
                 FastTrader.hd.position_checker()
+                FastTrader.hd.market_reader()
+                print(current_price)
 
-                if FastTrader.hd.positioning:
+                if FastTrader.hd.positioning and not FastTrader.hd.ordering:
                     FastTrader.hd.position_checker_for_market_ordering(current_price)
-
+                    print('aiming to place execution order')
                 FastTrader.count += 1
 
                 if FastTrader.hd.signal:
-                    print(current_price)
+                    print('aiming to place a new order')
                     FastTrader.hd.order_information_checker("MARKET")
 
                 if FastTrader.count == 130:
                     FastTrader.hd.market_reader()
                     FastTrader.hd.sfd_status_checker()
                     FastTrader.count = 0
-                elif FastTrader.count % 10 == 0:
-                    print(FastTrader.count)
+
 
         s = Callback()
         self.pubnub.add_listener(s)
